@@ -7,9 +7,9 @@ from os.path import isfile, join
 from PIL import Image, ImageTk, ImageEnhance
 from tkinter import PhotoImage, Tk
 from blokker import Block, get_blocks
-from player import Player, gravity, gravity_landed, move, charge_jump, get_player_bounds, handle_vertical_collision, handle_horizontal_collision
+from player import *
 
-
+TIMER = 0
 def app_started(app):
     app.height = 912
     app.width = 1200
@@ -18,15 +18,17 @@ def app_started(app):
     app.info_mode = "play" #må endre den til menu
     app.timer_delay = 17
     app.screen = (app.width, app.height)
-    app.background = get_background()
+    app.background = get_background("victor_background","bane1.png")
     app.scale_x = 1
     app.scale_y = 1
     app.player = Player(app.screen)
     app.my_blocks = get_blocks(app)
+    app.current_level = 0
     
 
 def timer_fired(app):
-    
+    global TIMER 
+    TIMER+= 1
     handle_vertical_collision(app)
     handle_horizontal_collision(app)
     if app.player.on_ground == False:
@@ -36,6 +38,7 @@ def timer_fired(app):
         gravity_landed(app.player)
     if app.player.space_pressed:
         charge_jump(app.player)
+    level_checker(app, app.player)
     move(app.player)
    
 
@@ -62,7 +65,7 @@ def key_pressed(app,event):
             app.player.player_direction = "west"
 def key_released(app,event):
         if event.key == "Space":
-            print("Jump released")
+            
             if app.player.player_vel_y < 1:
                 app.player.jump_released = True
 
@@ -72,37 +75,32 @@ def key_released(app,event):
         if (event.key == "Left"):
             if app.player.on_ground == True:
                 app.player.left_pressed = False 
-def convert_coordinates_x(app):
-    if app.width > 640:
-        app.scale_x = app.width // 640
-        
-    return app.scale_x
-def convert_coordinates_y(app):
-    if app.height > 640:
-        app.scale_y = app.width // 480
-    return app.scale_y
 
-def get_background():
-    path = join( "assets","victor_background","bane1.png")
+
+def get_background(dir1,dir2):
+    path = join( "assets",dir1,dir2)
     image_background1 = load_image(path)
     return image_background1
 
 def draw_background(app, canvas):
     app.background 
+    
     #canvas.create_image(app.width/2, app.height/2, pil_image = app.background)
+        
 
 def draw_player(screen, app):
     screen.blit(app.player.player, (app.player.player_x, app.player.player_y))
     
 
 def redraw_all(app,canvas):
-    draw_background(app, canvas)
     
+    
+    draw_background(app, canvas)
     (x0, y0, x1, y1) = get_player_bounds(app.player)
     canvas.create_rectangle(x0, y0 , x1, y1 , fill="cyan")
-    for block in app.my_blocks:
+    for block in app.my_blocks[app.current_level]:
         block.draw(canvas)
-    #canvas.create_text(100, 10, text=f"({app.player_vel_x}, {app.right_pressed})", fill="white")
+    
     
 
     

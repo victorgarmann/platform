@@ -10,7 +10,7 @@ class Player:
         self.player_x = self.width/2
         self.player_vel_x = 0
         self.player_vel_y = 0
-        self.player_y = 0
+        self.player_y = 3
         self.player_height = 40
         self.player_width = 20
         self.on_ground = False
@@ -28,7 +28,7 @@ class Player:
         self.player_direction = "north"
 
 def release_jump(player):
-    player.player_vel_y = -(player.jump_power*5)
+    player.player_vel_y = -(player.jump_power*6)
     if player.player_direction == "east":
         player.player_vel_x = player.jump_power
     elif player.player_direction == "west":
@@ -41,7 +41,7 @@ def charge_jump(player):
         player.player_vel_x = 0
     if player.jump_released == False:
         player.charge_time += 1
-        player.jump_power = min(5, player.charge_time * 1/10)
+        player.jump_power = min(5, player.charge_time * 1/8)
     else:
         release_jump(player)
         player.charge_count = 0
@@ -50,7 +50,7 @@ def charge_jump(player):
 def gravity(player):
     if player.on_ground == False:
         player.fall_time += 1
-        player.player_vel_y += min(1,player.fall_time * GRAVITY*2)
+        player.player_vel_y += min(1,player.fall_time * GRAVITY)
 def gravity_landed(player):
         player.fall_time = 0
         player.on_ground = True
@@ -78,7 +78,7 @@ def get_player_bounds(player):
 def handle_vertical_collision(app):
     (pxL,pyU, pxR, pyD) = get_player_bounds(app.player)
     
-    for block in app.my_blocks:
+    for block in app.my_blocks[app.current_level]:
         if (pxL < block.xR and pxR > block.xL):
             
             
@@ -90,13 +90,13 @@ def handle_vertical_collision(app):
                 
                
                #sjekker kollisjon fra under
-            if (app.player.player_vel_y < 0) and (pyU <= block.yD) and (pyU >= block.yU) and (pyD > block.yD):
+            if (app.player.player_vel_y < 0) and (pyU <= block.yD +2) and (pyU >= block.yU +2) and (pyD > block.yD-2):
                 if ((pxL > block.xL) and (pxL < block.xR)) or ((pxR > block.xL) and (pxR < block.xR)):
                     app.player.player_vel_y = -app.player.player_vel_y *1/2
                     app.player.player_y = block.yD 
                 
     
-    for block in app.my_blocks:
+    for block in app.my_blocks[app.current_level]:
         
         if pyD == block.yU and (abs(app.player.player_vel_y) < 1):
             if pxL > block.xR or pxR < block.xL:
@@ -110,15 +110,29 @@ def handle_vertical_collision(app):
 def handle_horizontal_collision(app):
     (pxL,pyU, pxR, pyD) = get_player_bounds(app.player)
     
-    for block in app.my_blocks:
+    for block in app.my_blocks[app.current_level]:
         
-        if ((pyD) < block.yD) and ((pyD) > block.yU):
-            if  ((pyU) < block.yD) and ((pyU) > block.yU):   
+        if ((pyD) < block.yD + 10) and ((pyD) > block.yU - 10):
+            if  ((pyU) < block.yD + 10) and ((pyU) > block.yU - 10):   
                 #sjekker kollisjon fra høyre 
                 if pxL <= block.xR and pxL > block.xL:
-                    app.player.player_vel_x = -app.player.player_vel_x
+                    if app.player.on_ground == False:
+                        app.player.player_vel_x = -(app.player.player_vel_x * 7/10)
+                    else:
+                        app.player.player_vel_x = -app.player.player_vel_x
                     return
                 #sjekker kollisjon fra venstre
                 if pxR >= block.xL and pxR < block.xR:
-                    app.player.player_vel_x = -app.player.player_vel_x
+                    if app.player.on_ground == False:
+                        app.player.player_vel_x = -(app.player.player_vel_x * 7/10)
+                    else:
+                        app.player.player_vel_x = -app.player.player_vel_x
+                        
                     return
+def level_checker(app,player):
+    if player.player_y < 0:
+        app.current_level +=1
+        player.player_y = app.height - 5
+    if player.player_y > app.height:
+        app.current_level -= 1
+        player.player_y = 5
